@@ -2,7 +2,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { connectMongo } from "../../src/lib/mongodb";
 import { ScoringFactModel } from "../../src/lib/models/ScoringFact";
-import { getWindowRange, Window } from "../../src/lib/acculynx/windows";
+import { getWindowRange } from "../../src/lib/acculynx/windows";
+import type { Window } from "../../src/lib/acculynx/windows";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).end(); }
@@ -13,6 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const rows = await ScoringFactModel.aggregate([
     { $match: { occurredAt: { $gte: start, $lte: end }, repExternalId: { $ne: null } } },
+    // Deterministic order so $last below means "most recent fact" (newest name/branch/link).
+    { $sort: { occurredAt: 1, _id: 1 } },
     { $group: {
         _id: "$repExternalId",
         repName: { $last: "$repNameSnapshot" },
