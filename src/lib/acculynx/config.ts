@@ -14,8 +14,10 @@ export const METRIC_LABELS: Record<Metric, string> = {
   revenue: "Revenue",
 };
 
-// AccuLynx representative type that earns leaderboard credit.
-export const REP_TYPE = "SalesOwner";
+// AccuLynx representative types that earn leaderboard credit, in PREFERENCE order:
+// use the SalesOwner when present, otherwise fall back to the CompanyRepresentative.
+// (Live data shows most jobs carry a CompanyRepresentative but no SalesOwner.)
+export const REP_TYPES = ["SalesOwner", "CompanyRepresentative"];
 
 // Map an AccuLynx milestone (stage) name -> count metric.
 export const STAGE_TO_METRIC: Record<string, Exclude<Metric, "revenue">> = {

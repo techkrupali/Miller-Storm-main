@@ -1,10 +1,10 @@
 // src/lib/acculynx/mapping.test.ts
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mapJobToFacts, buildFactKey, pickSalesOwnerUserId } from "./mapping.ts";
-import { STAGE_TO_METRIC, REVENUE_STAGE, REP_TYPE } from "./config.ts";
+import { mapJobToFacts, buildFactKey, pickRepUserId } from "./mapping.ts";
+import { STAGE_TO_METRIC, REVENUE_STAGE, REP_TYPES } from "./config.ts";
 
-const cfg = { repType: REP_TYPE, stageToMetric: STAGE_TO_METRIC, revenueStage: REVENUE_STAGE };
+const cfg = { repTypes: REP_TYPES, stageToMetric: STAGE_TO_METRIC, revenueStage: REVENUE_STAGE };
 
 const job = {
   id: "JOB1",
@@ -24,8 +24,16 @@ const representatives = { items: [
 ] };
 const financials = { approvedJobValue: 90522.11 };
 
-test("pickSalesOwnerUserId returns the SalesOwner user id", () => {
-  assert.equal(pickSalesOwnerUserId(representatives, REP_TYPE), "U-SALES");
+test("pickRepUserId prefers SalesOwner", () => {
+  assert.equal(pickRepUserId(representatives, REP_TYPES), "U-SALES");
+});
+
+test("pickRepUserId falls back to CompanyRepresentative when no SalesOwner", () => {
+  const reps = { items: [
+    { type: "Additional", user: { id: "U-EXTRA" } },
+    { type: "CompanyRepresentative", user: { id: "U-COMPANY" } },
+  ] };
+  assert.equal(pickRepUserId(reps, REP_TYPES), "U-COMPANY");
 });
 
 test("maps a job to filed/won/revenue facts with correct dates", () => {

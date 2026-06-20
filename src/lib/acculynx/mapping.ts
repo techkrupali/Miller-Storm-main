@@ -5,7 +5,7 @@
 import type { Metric } from "./config";
 
 export interface MappingConfig {
-  repType: string;
+  repTypes: string[]; // ordered preference; first matching rep type wins
   stageToMetric: Record<string, Exclude<Metric, "revenue">>;
   revenueStage: string;
 }
@@ -24,10 +24,15 @@ export function buildFactKey(jobId: string, metric: string): string {
   return `${jobId}:${metric}`;
 }
 
-export function pickSalesOwnerUserId(representatives: any, repType: string): string | null {
+// Returns the user id of the first representative whose type matches, trying
+// repTypes in order (e.g. SalesOwner first, then CompanyRepresentative).
+export function pickRepUserId(representatives: any, repTypes: string[]): string | null {
   const items = representatives?.items ?? [];
-  const owner = items.find((r: any) => r?.type === repType);
-  return owner?.user?.id ?? null;
+  for (const t of repTypes) {
+    const match = items.find((r: any) => r?.type === t);
+    if (match?.user?.id) return match.user.id;
+  }
+  return null;
 }
 
 function milestoneDate(history: any, name: string): Date | null {
@@ -46,7 +51,7 @@ export function mapJobToFacts(
 ): FactDraft[] {
   const { job, milestoneHistory, financials, representatives } = input;
   const jobId = job.id;
-  const repExternalId = pickSalesOwnerUserId(representatives, cfg.repType);
+  const repExternalId = pickRepUserId(representatives, cfg.repTypes);
   const location = extractCity(job);
   const facts: FactDraft[] = [];
 

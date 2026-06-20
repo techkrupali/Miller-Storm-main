@@ -3,7 +3,7 @@ import { connectMongo } from "../mongodb";
 import { ScoringFactModel } from "../models/ScoringFact";
 import { SyncStateModel } from "../models/SyncState";
 import { UserModel } from "../models/User";
-import { STAGE_TO_METRIC, REVENUE_STAGE, REP_TYPE } from "./config";
+import { STAGE_TO_METRIC, REVENUE_STAGE, REP_TYPES } from "./config";
 import {
   fetchJobsModifiedSince, fetchMilestoneHistory, fetchRepresentatives,
   fetchFinancials, fetchUserMap,
@@ -13,7 +13,7 @@ import type { MappingConfig } from "./mapping";
 import { getWindowRange } from "./windows";
 
 const MAPPING_CFG: MappingConfig = {
-  repType: REP_TYPE,
+  repTypes: REP_TYPES,
   stageToMetric: STAGE_TO_METRIC,
   revenueStage: REVENUE_STAGE,
 };
