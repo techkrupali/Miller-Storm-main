@@ -29,15 +29,20 @@ async function get(path: string, params: Record<string, string | number> = {}): 
   throw new Error(`AccuLynx retries exhausted on ${path}`);
 }
 
-const PAGE = 100;
+// AccuLynx caps page size at 50 across list endpoints (pageSize > 50 -> HTTP 400).
+const PAGE = 50;
 
 // All jobs modified on/after `since` (YYYY-MM-DD). Paginates fully.
+// NOTE: AccuLynx REQUIRES both startDate AND endDate when dateFilterType is set
+// (startDate alone returns HTTP 400). endDate is set 2 days ahead to safely
+// include today's jobs regardless of timezone.
 export async function fetchJobsModifiedSince(since: string): Promise<any[]> {
   const out: any[] = [];
+  const endDate = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
   let recordStartIndex = 0;
   for (;;) {
     const page = await get("/jobs", {
-      dateFilterType: "ModifiedDate", startDate: since,
+      dateFilterType: "ModifiedDate", startDate: since, endDate,
       sortBy: "ModifiedDate", sortOrder: "Descending",
       pageSize: PAGE, recordStartIndex,
     });
