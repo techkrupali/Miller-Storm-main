@@ -7,3 +7,9 @@ dist/
 firebase-service-account.json
 *.plist
 google-services.json
+
+# Local-only product/planning docs (kept off GitHub on purpose)
+docs/
+
+# Local-only AI assistant guidance (kept off GitHub on purpose)
+CLAUDE.md
