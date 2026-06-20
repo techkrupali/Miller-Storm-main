@@ -75,12 +75,11 @@ export async function fetchMilestoneHistory(jobId: string) { return get(`/jobs/$
 export async function fetchRepresentatives(jobId: string) { return get(`/jobs/${jobId}/representatives`); }
 export async function fetchFinancials(jobId: string) { return get(`/jobs/${jobId}/financials`); }
 
-// All users -> map of AccuLynx userId -> { email, name }.
-export async function fetchUserMap(): Promise<Record<string, { email: string; name: string }>> {
-  const map: Record<string, { email: string; name: string }> = {};
+// Paginate /users for one status filter, merging into `map`.
+async function loadUsersInto(map: Record<string, { email: string; name: string }>, extra: Record<string, string>) {
   let pageStartIndex = 0;
   for (;;) {
-    const page = await get("/users", { pageSize: USERS_PAGE, pageStartIndex });
+    const page = await get("/users", { pageSize: USERS_PAGE, pageStartIndex, ...extra });
     const items = page?.items ?? [];
     for (const u of items) {
       const name = u.displayName || `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() || u.email || u.id;
@@ -89,5 +88,15 @@ export async function fetchUserMap(): Promise<Record<string, { email: string; na
     if (items.length < USERS_PAGE) break;
     pageStartIndex += USERS_PAGE;
   }
+}
+
+// All users -> map of AccuLynx userId -> { email, name }.
+// NOTE: /users returns only ACTIVE users by default; reps who were deactivated
+// still own old jobs, so we ALSO pull status=Inactive (else they show as
+// "Unknown Rep"). includeInactive/userStatus=All are silently ignored by the API.
+export async function fetchUserMap(): Promise<Record<string, { email: string; name: string }>> {
+  const map: Record<string, { email: string; name: string }> = {};
+  await loadUsersInto(map, {});                      // active users
+  await loadUsersInto(map, { status: "Inactive" }); // former/deactivated reps
   return map;
 }
