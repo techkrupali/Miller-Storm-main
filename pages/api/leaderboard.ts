@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).end(); }
   await connectMongo();
 
-  const w = (["week", "month", "all"].includes(String(req.query.window)) ? req.query.window : "all") as Window;
+  const w = (["week", "month", "year"].includes(String(req.query.window)) ? req.query.window : "month") as Window;
   const { start, end } = getWindowRange(w);
 
   const rows = await ScoringFactModel.aggregate([
