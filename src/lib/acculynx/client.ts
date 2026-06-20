@@ -9,12 +9,26 @@ function apiKey(): string {
 
 async function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
 
-// GET with retry/backoff on 429 + 5xx. Returns parsed JSON, or null on 404.
+// Global request pacing: AccuLynx allows ~10 req/s per API key. We space every
+// request >= 120ms apart (~8/s) so the backfill (hundreds of jobs x 3 calls each)
+// stays UNDER the limit instead of bursting into 429s + slow exponential backoff.
+// Shared module state serializes even the concurrent (Promise.all) per-job calls.
+let nextSlotAt = 0;
+const MIN_INTERVAL_MS = 120;
+async function pace() {
+  const now = Date.now();
+  const wait = Math.max(0, nextSlotAt - now);
+  nextSlotAt = Math.max(now, nextSlotAt) + MIN_INTERVAL_MS;
+  if (wait) await sleep(wait);
+}
+
+// GET with pacing + retry/backoff on 429 + 5xx. Returns parsed JSON, or null on 404.
 async function get(path: string, params: Record<string, string | number> = {}): Promise<any> {
   const url = new URL(ACCULYNX_BASE + path);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
 
   for (let attempt = 0; attempt < 5; attempt++) {
+    await pace();
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${apiKey()}`, Accept: "application/json" },
     });
